@@ -14,7 +14,7 @@ export async function POST(request) {
         headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from: 'MyFortuneTracker <onboarding@resend.dev>',
-          to: 'support@myfortunetracker.ai',
+          to: 'oliverchealeswork@gmail.com',
           subject: `New waitlist signup: ${email}`,
           text: `New waitlist signup!\n\nEmail: ${email}\nTime: ${new Date().toISOString()}`
         })
