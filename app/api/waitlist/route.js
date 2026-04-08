@@ -1,5 +1,3 @@
-import { supabase } from '@/lib/supabase'
-
 export async function POST(request) {
   try {
     const { email } = await request.json()
@@ -8,26 +6,24 @@ export async function POST(request) {
       return Response.json({ error: 'Valid email required' }, { status: 400 })
     }
 
-    if (!supabase) {
-      // Fallback: log to console if Supabase not configured
-      console.log('WAITLIST SIGNUP:', email)
-      return Response.json({ ok: true, message: 'Joined waitlist' })
-    }
-
-    // Insert into waitlist table (upsert to avoid duplicates)
-    const { error } = await supabase
-      .from('waitlist')
-      .upsert({ email, signed_up_at: new Date().toISOString() }, { onConflict: 'email' })
-
-    if (error) {
-      // If table doesn't exist, try creating it via RPC or just log
-      console.error('Supabase waitlist error:', error.message)
-      // Still return success — we don't want to lose the signup
-      return Response.json({ ok: true, message: 'Joined waitlist' })
+    // Send notification email via Resend
+    const resendKey = process.env.RESEND_API_KEY
+    if (resendKey) {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'MyFortuneTracker <onboarding@resend.dev>',
+          to: 'support@myfortunetracker.ai',
+          subject: `New waitlist signup: ${email}`,
+          text: `New waitlist signup!\n\nEmail: ${email}\nTime: ${new Date().toISOString()}`
+        })
+      })
     }
 
     return Response.json({ ok: true, message: 'Joined waitlist' })
   } catch (e) {
+    console.error('Waitlist error:', e)
     return Response.json({ error: 'Something went wrong' }, { status: 500 })
   }
 }
